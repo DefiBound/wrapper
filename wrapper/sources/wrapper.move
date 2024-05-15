@@ -32,10 +32,12 @@ module wrapper::wrapper {
     /// - `id`: Unique identifier for the Wrapper.
     /// - `items`: Vector of IDs representing the objects wrapped.
     /// - `kind`: ASCII string representing the type of objects the Wrapper can contain.
+    /// - `alias`: UTF8 encoded string representing an alias for the Wrapper.
     public struct Wrapper has key, store {
         id: UID,
         items: vector<ID>, // wrapped object ids
         kind: std::ascii::String, //type of wrapped object
+        alias: std::string::String, // alias for the Wrapper
     }
 
     // ===== Public view functions =====
@@ -57,6 +59,15 @@ module wrapper::wrapper {
 
 
     // ===== property functions =====
+
+    /// Retrieves the alias of the Wrapper.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// Returns:
+    /// - UTF8 encoded string representing the alias of the Wrapper.
+    public fun alias(w: &Wrapper): std::string::String {
+        w.alias
+    }
 
     /// Retrieves the kind of objects contained within the Wrapper.
     /// Returns an ASCII string representing the type of the wrapped objects.
@@ -175,7 +186,16 @@ module wrapper::wrapper {
     }
 
     // ===== Public functions =====
-
+    /// Sets a new alias for the Wrapper.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `alias`: New alias to set for the Wrapper.
+    /// Effects:
+    /// - Updates the alias field of the Wrapper.
+    public fun set_alias(w: &mut Wrapper, alias: std::string::String) {
+        w.alias = alias;
+    }
+    
     /// Removes an object from the Wrapper at a specified index and returns it.
     /// Checks that the operation is type-safe.
     /// Parameters:
@@ -266,7 +286,8 @@ module wrapper::wrapper {
         Wrapper {
             id: object::new(ctx),
             items: vector[],
-            kind: std::ascii::string(b"")
+            kind: std::ascii::string(b""),
+            alias: std::string::utf8(b""),
         }
     }
 
@@ -281,7 +302,7 @@ module wrapper::wrapper {
         // remove all items from the Wrapper
         assert!(w.count() == 0, EWrapperNotEmpty);
         // delete the Wrapper
-        let Wrapper { id, items:_, kind: _ } = w;
+        let Wrapper { id, items:_, kind: _, alias:_ } = w;
         id.delete();
     }
 
