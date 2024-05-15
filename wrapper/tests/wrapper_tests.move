@@ -137,9 +137,26 @@ module wrapper::wrapper_tests {
 
         assert!(wrapper::count(&wrapper1) == 1, 0);
         assert!(wrapper::count(&wrapper2) == 1, 0);
-        let w = wrapper::merge<O>(wrapper1, wrapper2, &mut ctx);
+
+        // Test merging wrappers with different types
+        let mut w = wrapper::merge<O>(wrapper1, wrapper2, &mut ctx);
         assert!(wrapper::count(&w) == 2, 0);
         debug::print(&w.kind());
+
+        // Test borrowing an item from a wrapper with different type
+        let x:&mut wrapper::Wrapper = &mut w[0];
+        debug::print(&x.count());
+        debug::print(&x.kind());
+        x.add(Create(&mut ctx,11));
+        debug::print(&x.count());
+        debug::print(&x.kind());
+
+        // Test borrowing an item from a wrapper with different type
+        let x:&wrapper::Wrapper = &w[1];
+        debug::print(&x.count());
+        debug::print(&x.kind());
+
+
         assert!(w.kind() == std::ascii::string(b"0000000000000000000000000000000000000000000000000000000000000000::wrapper::Wrapper"), 0);
         let mut o = w.unwrap();
         
@@ -221,6 +238,23 @@ module wrapper::wrapper_tests {
         let mut wrapper = wrapper::new(&mut ctx);
         // try to remove an item from an empty wrapper
         let obj = wrapper::remove<O>(&mut wrapper, 0);
+        obj.Destroy();
+        wrapper.destroy();
+    }
+
+    /// test ctx1 create and ctx2 use
+    #[test]
+    fun test_ctx1_create_ctx2_use() {
+        let mut ctx1 = tx_context::dummy();
+        let mut ctx2 = tx_context::dummy();
+        let mut wrapper = wrapper::new(&mut ctx1);
+        let object = Create(&mut ctx1,0);
+        let id = object::id(&object);
+        wrapper::add(&mut wrapper, object);
+
+        
+        let obj = wrapper::remove<O>(&mut wrapper, 0);
+        assert!(obj.data == 0, 1);
         obj.Destroy();
         wrapper.destroy();
     }
