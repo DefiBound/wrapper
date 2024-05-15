@@ -3,6 +3,7 @@ name = "wrapper"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 license = "Apache 2.0"
 authors = ["Euraxluo (euraxluo@outlook.com)"]
+version = "0.1.0"
 
 
 [dependencies]
@@ -20,7 +21,8 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-wrapper = "0x0"
+# testnet "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
+wrapper = "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

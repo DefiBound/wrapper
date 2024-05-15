@@ -1,4 +1,5 @@
 /// Module: wrapper
+/// Github: https://github.com/DefiBound/wrapper
 /// Provides functionality for managing a collection of objects within a "Wrapper".
 /// This module includes functionalities to wrap, unwrap, merge, split, and manage items in a Wrapper.
 /// It handles different kinds of objects and ensures that operations are type-safe.
@@ -195,7 +196,7 @@ module wrapper::wrapper {
     public fun set_alias(w: &mut Wrapper, alias: std::string::String) {
         w.alias = alias;
     }
-    
+
     /// Removes an object from the Wrapper at a specified index and returns it.
     /// Checks that the operation is type-safe.
     /// Parameters:
