@@ -5,6 +5,8 @@ license = "Apache 2.0"
 authors = ["Euraxluo (euraxluo@outlook.com)"]
 version = "0.1.0"
 
+# testnet published_at 0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d
+published_at = "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
