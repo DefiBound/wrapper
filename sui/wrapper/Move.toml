@@ -5,14 +5,14 @@ license = "Apache 2.0"
 authors = ["Euraxluo (euraxluo@outlook.com)"]
 version = "0.1.0"
 
-# testnet published-at 0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d
-# published-at = "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
+# testnet published-at 0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f
+published-at = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 # MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet" }
 
 [addresses]
-# testnet "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
-# wrapper = "0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d"
-wrapper = "0x0"
+# testnet "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
+# wrapper = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
+wrapper = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
