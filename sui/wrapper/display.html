@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态SVG</title>
+    <style>
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        text {
+            fill: black;
+            font-size: 12px;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <svg id="dynamicSvg" width="500" height="500" viewBox="0 0 120 120">
+        <rect width="120" height="120" fill="rgba(192,192,192,0.8)" />
+        <text>
+            <tspan id="wrapperToken" x="50%" y="8%" font-size="5"></tspan>
+            <tspan id="operation" x="50%" y="56.8636">op: 'mint'</tspan>
+            <tspan id="unknown" x="50%" y="71.8636" font-size="1">???</tspan>
+            <tspan id="count" x="50%" y="86.8636">count</tspan>
+            <tspan id="gameNFT" x="50%" y="98%" font-size="2"></tspan>
+        </text>
+    </svg>
+
+    <script>
+        // 获取URL中的查询参数
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                wrapperToken: params.get('wrapperToken') || '0x123456789的WrapperToken',
+                gameNFT: params.get('gameNFT') || '0x83af4fac74e01cd63e9343f3d53e0d93de4c8cb4ad75ec01d2d1f89189495418::game::GameNFT'
+            };
+        }
+
+        // 动态设置SVG文本内容
+        function setSVGContent() {
+            const params = getQueryParams();
+            document.getElementById('wrapperToken').textContent = params.wrapperToken;
+            document.getElementById('gameNFT').textContent = params.gameNFT;
+            
+            // 调整文字大小和自动换行
+            adjustTextSizeAndWrap('wrapperToken', params.wrapperToken, 50);
+            adjustTextSizeAndWrap('gameNFT', params.gameNFT, 98);
+        }
+
+        // 调整文字大小和自动换行
+        function adjustTextSizeAndWrap(elementId, text, yPosition) {
+            const element = document.getElementById(elementId);
+            const maxLineLength = 30; // 设置每行最大字符数
+            let lines = [];
+            let line = '';
+
+            for (let word of text.split(' ')) {
+                if ((line + word).length > maxLineLength) {
+                    lines.push(line.trim());
+                    line = word + ' ';
+                } else {
+                    line += word + ' ';
+                }
+            }
+            lines.push(line.trim());
+
+            element.textContent = ''; // 清空原有内容
+            lines.forEach((lineText, index) => {
+                let tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                tspan.setAttribute('x', '50%');
+                tspan.setAttribute('y', `${yPosition + index * 6}`); // 行间距调整
+                tspan.textContent = lineText;
+                element.appendChild(tspan);
+            });
+        }
+
+        // 在页面加载时设置SVG内容
+        window.onload = setSVGContent;
+    </script>
+</body>
+</html>
