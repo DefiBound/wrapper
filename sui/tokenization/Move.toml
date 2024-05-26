@@ -1,0 +1,17 @@
+[package]
+name = "tokenization"
+edition = "2024.beta"
+license = "Apache 2.0"
+authors = ["Euraxluo (euraxluo@outlook.com)"]
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+# wrapper = { git = "https://github.com/DefiBound/wrapper.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+wrapper = { local = "../wrapper" }
+
+
+[addresses]
+tokenization = "0x0"
+
+
