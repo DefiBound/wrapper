@@ -6,7 +6,7 @@ authors = ["Euraxluo (euraxluo@outlook.com)"]
 version = "0.1.0"
 
 # testnet published-at 0x7339f9bc94a50a627c14223c465fe55876c5acf8472226ed37f12b4ada85367d
-published-at = "0x3bcc674065e7a7468eeae61d7ca436c547111603ddf1cc1f691938002628bc05"
+published-at = "0xcae4bf44eb02b82901bbd2dff83f542c6cc6f95bdadcf6fa29bffcc98cf0b54b"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
