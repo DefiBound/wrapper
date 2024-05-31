@@ -5,8 +5,7 @@ module wrapper::wrapper_tests {
     const EItemNotFound: u64 = 0;
     const EIndexOutOfBounds: u64 = 1;
     const EItemNotSameKind: u64 = 2;
-    const EItemNotFoundOrNotSameKind: u64 = 3;
-    const EWrapperNotEmpty: u64 = 4;
+    const EWrapperNotEmpty: u64 = 3;
 
     public struct O has store,key { id: UID,data:u64 }
     public fun Create(ctx:&mut TxContext,data:u64): O {
@@ -39,7 +38,7 @@ module wrapper::wrapper_tests {
         let mut dw = w;
         while (dw.count() > 0) {
             let id = dw.item(0);
-            let dropobj = dw.take<O>(id);
+            let dropobj = dw.take<O>(object::id_from_bytes(id));
             dropobj.Destroy();
         };
         dw.destroy_empty();
@@ -49,7 +48,7 @@ module wrapper::wrapper_tests {
         let mut dw = w;
         while (dw.count() > 0) {
             let id = dw.item(0);
-            let dropobj = dw.take<S>(id);
+            let dropobj = dw.take<S>(object::id_from_bytes(id));
             dropobj.DestroyS();
         };
         dw.destroy_empty();
@@ -101,7 +100,7 @@ module wrapper::wrapper_tests {
         wrapper::add(&mut wrapper, object);
 
         // Attempt to access an out-of-bounds index
-        let id = wrapper::item(&wrapper, 1);
+        let id = object::id_from_bytes(wrapper::item(&wrapper, 1));
         assert!(id == oid, 1);
         let dropobj = wrapper.take<O>(oid);
         dropobj.Destroy();
@@ -156,15 +155,20 @@ module wrapper::wrapper_tests {
         debug::print(&x.count());
         debug::print(&x.kind());
 
-
+        debug::print(&w.count());
+    
         assert!(w.kind() == std::ascii::string(b"0000000000000000000000000000000000000000000000000000000000000000::wrapper::Wrapper"), 0);
-        let mut o = w.take_all<wrapper::Wrapper>();
-        
+
+        // take all
+        let mut o = vector[];
+        while (w.count() > 0){
+            o.push_back(w.remove<wrapper::Wrapper>(0));
+        };
+
         clear_s_wrapper(o.remove(1));
         clear_o_wrapper(o.remove(0));
         o.destroy_empty();
         w.destroy_empty();
-
     }
 
     #[test]
@@ -200,40 +204,8 @@ module wrapper::wrapper_tests {
         clear_o_wrapper(merged_wrapper);
     }
 
-    #[test]
-    /// Test splitting wrappers
-    fun test_split_operations() {
-        let mut ctx = tx_context::dummy();
-        let mut wrapper = wrapper::new(&mut ctx);
-        let mut objects = vector[Create(&mut ctx,1), Create(&mut ctx,2), Create(&mut ctx,3), Create(&mut ctx,4)];
-        let count = objects.length();
-
-        // Add all objects and then split by index
-        while (wrapper::count(&wrapper) < count) {
-            wrapper::add(&mut wrapper, objects.remove(0));
-        };
-        objects.destroy_empty();
-
-        let indices = vector[1];
-        let new_wrapper = wrapper::split_with_index<O>(&mut wrapper, indices, &mut ctx);
-        assert!(wrapper::count(&new_wrapper) == 1, 0);
-        assert!(wrapper::count(&wrapper) == count - 1, 0);
-
-        clear_o_wrapper(new_wrapper);
-
-
-        // Test edge case of splitting with an empty index list
-        let empty_wrapper = wrapper::split<O>(&mut wrapper, count + 1, &mut ctx);
-        assert!(wrapper::is_empty(&wrapper), 1);
-        assert!(wrapper::count(&empty_wrapper) == count - 1, 0);
-
-        clear_o_wrapper(wrapper);
-        clear_o_wrapper(empty_wrapper);
-    }
-
-
     #[test, expected_failure(abort_code = 1)]
-    /// test if splitting an empty wrapper fails
+    /// test if remove an empty wrapper fails
     fun test_operate_on_empty_wrapper() {
         let mut ctx = tx_context::dummy();
         let mut wrapper = wrapper::new(&mut ctx);

@@ -5,6 +5,64 @@ module wrapper::display {
     use sui::display::{Self, Display};
 
     use wrapper::wrapper::{Self, Wrapper};
+// const HEX_CHARS: vector<u8> = b"0123456789ABCDEF";
+
+    // public fun url_encode(data: &vector<u8>): vector<u8> {
+    //     let res = vector::empty<u8>();
+
+    //     for byte in data {
+    //         if (*byte >= 65 && *byte <= 90) || (*byte >= 97 && *byte <= 122) || (*byte >= 48 && *byte <= 57) {
+    //             vector::push_back(&mut res, *byte);
+    //         } else {
+    //             vector::push_back(&mut res, 37); // '%'
+    //             vector::push_back(&mut res, *vector::borrow(&HEX_CHARS, (*byte >> 4) as u64));
+    //             vector::push_back(&mut res, *vector::borrow(&HEX_CHARS, (*byte & 0x0F) as u64));
+    //         }
+    //     }
+    //     res
+    // }
+
+    // public fun url_decode(data: &vector<u8>): vector<u8> {
+    //     let res = vector::empty<u8>();
+    //     let mut i = 0;
+    //     let size = vector::length(data);
+
+    //     while (i < size) {
+    //         let byte = *vector::borrow(data, i);
+    //         if byte == 37 { // '%'
+    //             let high = hex_char_to_value(*vector::borrow(data, i + 1));
+    //             let low = hex_char_to_value(*vector::borrow(data, i + 2));
+    //             vector::push_back(&mut res, (high << 4) | low);
+    //             i = i + 3;
+    //         } else {
+    //             vector::push_back(&mut res, byte);
+    //             i = i + 1;
+    //         }
+    //     }
+    //     res
+    // }
+
+    // fun hex_char_to_value(char: u8): u8 {
+    //     if char >= 48 && char <= 57 {
+    //         char - 48
+    //     } else if char >= 65 && char <= 70 {
+    //         char - 65 + 10
+    //     } else if char >= 97 && char <= 102 {
+    //         char - 97 + 10
+    //     } else {
+    //         abort 1001; // 无效的十六进制字符
+    //     }
+    // }
+
+    // #[test]
+    // fun test_url() {
+    //     let data = b"hello world!";
+    //     let encoded = url_encode(&data);
+    //     let decoded = url_decode(&encoded);
+
+    //     assert!(encoded == b"hello%20world%21", 1002);
+    //     assert!(data == decoded, 1003);
+    // }
 
     // === SVG ===
     const SVG_BG_PREFIX: vector<u8> = b"%3Cpattern id='bg' patternUnits='userSpaceOnUse' x='0' y='0' width='120' height='120'%3E%3Cimage href='";
@@ -157,7 +215,7 @@ module wrapper::display {
     public entry fun update_alias_display(w:&mut Wrapper,r:u64,g:u64,b:u64,base64:vector<u8>) {
         let (alias_span,_) = auto_create_svg_text_span(*w.alias().bytes(),18,60);
 
-        w.set_image_url(string::utf8( generate_svg(
+        w.set_image(string::utf8( generate_svg(
             base64,
             u64_to_bytes(r),
             u64_to_bytes(g),

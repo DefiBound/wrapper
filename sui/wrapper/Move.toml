@@ -6,13 +6,13 @@ authors = ["Euraxluo (euraxluo@outlook.com)"]
 version = "0.1.0"
 
 # testnet published-at 0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f
-published-at = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
+published-at = "0x9250d3529e1b5cc7aa81cd3bf9cb8ad3a102f1e1f7a45aead45f912a474c2730"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 # MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet" }
 
 [addresses]
-# testnet "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
-# wrapper = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
-wrapper = "0x5bad0e68cd4d4a459cf5c4693536ea9d041ba9d8f1844001dcd1334e9a06659f"
+# testnet "0x9250d3529e1b5cc7aa81cd3bf9cb8ad3a102f1e1f7a45aead45f912a474c2730"
+wrapper = "0x9250d3529e1b5cc7aa81cd3bf9cb8ad3a102f1e1f7a45aead45f912a474c2730"
+# wrapper = "0x0"

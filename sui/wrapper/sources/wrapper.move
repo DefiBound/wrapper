@@ -1,14 +1,25 @@
 /// Module: wrapper
-/// Github: https://github.com/DefiBound/wrapper
+/// Github: https://github.com/0xWrapper/wrapper
 /// Provides functionality for managing a collection of objects within a "Wrapper".
 /// This module includes functionalities to wrap, unwrap, merge, split, and manage items in a Wrapper.
 /// It handles different kinds of objects and ensures that operations are type-safe.
 module wrapper::wrapper {
-    use sui::dynamic_object_field as field;
+    use std::type_name;
+    use sui::dynamic_object_field as dof;
+    use sui::dynamic_field as df;
     use sui::display;
     use sui::package;
-    use sui::coin::{Coin};
-    use std::type_name;
+
+    // == tokenized ==
+    // use wrapper::wrapper::{Wrapper};
+    // use std::type_name;
+    use std::option::{Self};
+    use std::ascii::{Self};
+
+    use sui::url::{Self, Url};
+    use sui::table::{Self,Table};
+    use sui::coin::{Self, Coin, TreasuryCap};
+
 
     // ===== Error Codes =====
     const EItemNotFound: u64 = 0;
@@ -16,34 +27,35 @@ module wrapper::wrapper {
     const EItemNotSameKind: u64 = 2;
     const EItemNotFoundOrNotSameKind: u64 = 3;
     const EWrapperNotEmpty: u64 = 4;
+    const EWrapperNotEmptyOrINKSciption: u64 = 5;
 
-    // ===== Public types =====
-        
+    const EMPTY_WRAPPER_KIND: vector<u8> = b"EMPTY WRAPPER";
+    const INKSCRIPTION_WRAPPER_KIND: vector<u8> = b"INKSCRIPTION WRAPPER";
+    const TOKENIZED_WRAPPER_KIND: vector<u8> = b"TOKENIZED WRAPPER";
+
+    // ===== Wrapper Core Struct =====
+
     /// A one-time witness object used for claiming packages and transferring ownership within the Sui framework.
     /// This object is used to initialize and setup the display and ownership of newly created Wrappers.
     public struct WRAPPER has drop {}
 
-    /// Represents a dynamic field key for an item in a Wrapper.
-    /// Each item in a Wrapper has a unique identifier of type ID.
-    public struct Item has store, copy, drop { id: ID }
-
-    // ===== Wrapper Struct =====
     /// Represents a container for managing a set of objects.
     /// Each object is identified by an ID and the Wrapper tracks the type of objects it contains.
     /// Fields:
     /// - `id`: Unique identifier for the Wrapper.
-    /// - `items`: Vector of IDs representing the objects wrapped.
     /// - `kind`: ASCII string representing the type of objects the Wrapper can contain.
     /// - `alias`: UTF8 encoded string representing an alias for the Wrapper.
+    /// - `items`: Vector of IDs or Other Bytes representing the objects wrapped.
+    /// - `image`: Image of the Wrapper.
     public struct Wrapper has key, store {
         id: UID,
-        items: vector<ID>, // wrapped object ids
         kind: std::ascii::String, //type of wrapped object
         alias: std::string::String, // alias for the Wrapper
-        image_url: std::string::String, // image url for the Wrapper
+        items: vector<vector<u8>>, // wrapped object ids
+        image: std::string::String, // image url for the Wrapper
     }
 
-    // ===== Public view functions =====
+    // ===== Inital functions =====
 
     #[lint_allow(self_transfer)]
     /// Initializes a new Wrapper and sets up its display and publisher.
@@ -56,132 +68,103 @@ module wrapper::wrapper {
     fun init(witness: WRAPPER, ctx:&mut TxContext){
         let publisher = package::claim(witness,ctx);
         let keys = vector[
-            std::string::utf8(b"alias"),
             std::string::utf8(b"kind"),
+            std::string::utf8(b"alias"),
+            std::string::utf8(b"items"),
             std::string::utf8(b"image_url"),
             std::string::utf8(b"project_url"),
         ];
         let values = vector[
-            std::string::utf8(b"{alias}"),
             std::string::utf8(b"{kind}"),
-            std::string::utf8(b"{image_url}"),
-            std::string::utf8(b"https://defibound.online"),
+            std::string::utf8(b"{alias}"),
+            std::string::utf8(b"{items}"),
+            std::string::utf8(b"{image}"),
+            std::string::utf8(b"https://wrapper.space"),
         ];
         let mut display = display::new_with_fields<Wrapper>(&publisher,keys,values,ctx);
         display::update_version<Wrapper>(&mut display);
         transfer::public_transfer(publisher, tx_context::sender(ctx));
         transfer::public_transfer(display, tx_context::sender(ctx));
+        // Genesis Wrapper
+        inception(ctx);
     }
 
+    /// Creates a new Wrapper with the INKSCRIPTION kind.
+    fun inception(ctx: &mut TxContext) {
+        let mut inception = new(ctx);
+        inception.kind = std::ascii::string(b"INCEPTION WRAPPER");
+        inception.alias = std::string::utf8(b"The Dawn of Wrapper Protocol");
+        let mut poem = inception.items;
+        vector::push_back(&mut poem, b"In Genesis, the birth of vision's light,");
+        vector::push_back(&mut poem, b"Prime movers seek the endless flight.");
+        vector::push_back(&mut poem, b"Origin of dreams in tokens cast,");
+        vector::push_back(&mut poem, b"Alpha minds, forging futures vast.");
 
-    // ===== property functions =====
+        vector::push_back(&mut poem, b"Pioneers of liquidity's rise,");
+        vector::push_back(&mut poem, b"Inception's brilliance in our eyes.");
+        vector::push_back(&mut poem, b"First steps in a realm so grand,");
+        vector::push_back(&mut poem, b"Proto solutions, deftly planned.");
 
-    /// Retrieves the alias of the Wrapper.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// Returns:
-    /// - UTF8 encoded string representing the alias of the Wrapper.
-    public fun alias(w: &Wrapper): std::string::String {
-        w.alias
+        vector::push_back(&mut poem, b"Founding pillars of trust and trade,");
+        vector::push_back(&mut poem, b"Eureka moments that never fade.");
+        vector::push_back(&mut poem, b"In Wrapper's embrace, assets entwine,");
+        vector::push_back(&mut poem, b"Revolution in every design.");
+
+        vector::push_back(&mut poem, b"Smart contracts, decentralized might,");
+        vector::push_back(&mut poem, b"Liquidity pools, shining bright.");
+        vector::push_back(&mut poem, b"Tokenization's seamless grace,");
+        vector::push_back(&mut poem, b"In every swap, a better place.");
+
+        vector::push_back(&mut poem, b"Yield and NFTs display,");
+        vector::push_back(&mut poem, b"In dynamic, flexible sway.");
+        vector::push_back(&mut poem, b"From blind boxes to swap's exchange,");
+        vector::push_back(&mut poem, b"In Wrapper's world, nothing's strange.");
+
+        vector::push_back(&mut poem, b"Cross-chain bridges, assets glide,");
+        vector::push_back(&mut poem, b"Security, our trusted guide.");
+        vector::push_back(&mut poem, b"Community's voice, governance strong,");
+        vector::push_back(&mut poem, b"Together we thrive, our path is long.");
+
+        vector::push_back(&mut poem, b"In Genesis, we lay the ground,");
+        vector::push_back(&mut poem, b"Prime visions in Wrapper found.");
+        vector::push_back(&mut poem, b"With every step, we redefine,");
+        vector::push_back(&mut poem, b"A future bright, in Wrapper's line.");
+        transfer::public_transfer(inception, tx_context::sender(ctx));
     }
 
-    /// Retrieves the kind of objects contained within the Wrapper.
-    /// Returns an ASCII string representing the type of the wrapped objects.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// Returns:
-    /// - ASCII string indicating the kind of objects in the Wrapper.
-    public fun kind(w: &Wrapper): std::ascii::String {
-        w.kind
-    }
+    // ===== Basic Functions =====
 
-    /// Returns the number of objects contained within the Wrapper.
+    /// Creates a new, empty Wrapper.
     /// Parameters:
-    /// - `w`: Reference to the Wrapper.
+    /// - `ctx`: Transaction context used for creating the Wrapper.
     /// Returns:
-    /// - The count of items in the Wrapper as a 64-bit unsigned integer.
-    public fun count(w: &Wrapper): u64 {
-        w.items.length()
-    }
- 
-    /// Retrieves the ID of the object at a specified index within the Wrapper.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// - `i`: Index of the item to retrieve.
-    /// Returns:
-    /// - ID of the object at the specified index.
-    /// Errors:
-    /// - `EIndexOutOfBounds`: If the provided index is out of bounds.
-    public fun item(w: &Wrapper, i: u64): ID {
-        if (w.count() <= i) {
-            abort EIndexOutOfBounds
-        }else{
-            w.items[i]
+    /// - A new Wrapper with no items and a generic kind.
+    public fun new(ctx: &mut TxContext): Wrapper {
+        Wrapper {
+            id: object::new(ctx),
+            kind: std::ascii::string(EMPTY_WRAPPER_KIND),
+            alias: std::string::utf8(EMPTY_WRAPPER_KIND),
+            items: vector[],
+            image: std::string::utf8(b""),
         }
     }
 
-    /// Retrieves all object IDs contained within the Wrapper.
+    /// Destroys the Wrapper, ensuring it is empty before deletion.
     /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// Returns:
-    /// - A vector of IDs representing all objects within the Wrapper.
-    public fun items(w: &Wrapper): vector<ID> {
-        w.items
-    }
-
-    #[syntax(index)]
-    /// Borrow an immutable reference to the item at a specified index within the Wrapper.
-    /// Ensures the item exists and is of type T before borrowing.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// - `i`: Index of the item to borrow.
-    /// Returns:
-    /// - Immutable reference to the item of type T.
+    /// - `w`: The Wrapper to destroy.
+    /// Effects:
+    /// - The Wrapper and its identifier are deleted.
     /// Errors:
-    /// - `EItemNotFoundOrNotSameKind`: If no item exists at the index or if the item is not of type T.
-    public fun borrow<T:store + key>(w: &Wrapper,i: u64): &T {
-        let id = w.item(i);
-        assert!(w.has_item_with_type<T>(id), EItemNotFoundOrNotSameKind);
-        field::borrow(&w.id, Item { id })
+    /// - `EWrapperNotEmpty`: If the Wrapper is not empty at the time of destruction.
+    public fun destroy_empty(w: Wrapper) {
+        // remove all items from the Wrapper
+        assert!(w.is_empty(), EWrapperNotEmpty);
+        // delete the Wrapper
+        let Wrapper { id, kind: _, alias:_, items:_,  image:_ } = w;
+        id.delete();
     }
 
-    #[syntax(index)]
-    /// Borrow a mutable reference to the item at a specified index within the Wrapper.
-    /// Ensures the item exists and is of type T before borrowing.
-    /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// - `i`: Index of the item to borrow.
-    /// Returns:
-    /// - Mutable reference to the item of type T.
-    /// Errors:
-    /// - `EItemNotFoundOrNotSameKind`: If no item exists at the index or if the item is not of type T.
-    public fun borrow_mut<T:store + key>(w: &mut Wrapper, i: u64): &mut T {
-        let id = w.item(i);
-        assert!(w.has_item_with_type<T>(id), EItemNotFoundOrNotSameKind);
-        field::borrow_mut(&mut w.id, Item { id })
-    }
-
-    // ===== Check functions =====
-    
-    /// Checks if an item with the specified ID exists within the Wrapper.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// - `id`: ID of the item to check.
-    /// Returns:
-    /// - True if the item exists, false otherwise.
-    public fun has_item(w: &Wrapper, id: ID): bool {
-        field::exists_(&w.id, Item { id }) && w.items.contains(&id)
-    }
-    
-    /// Checks if an item with the specified ID exists within the Wrapper and is of type T.
-    /// Parameters:
-    /// - `w`: Reference to the Wrapper.
-    /// - `id`: ID of the item to check.
-    /// Returns:
-    /// - True if the item exists and is of type T, false otherwise.
-    public fun has_item_with_type<T: key + store>(w: &Wrapper, id: ID): bool {
-        field::exists_with_type<Item, T>(&w.id, Item { id }) && w.items.contains(&id) && w.is_same_kind<T>()
-    }
+    // ===== Basic Check functions =====
 
     /// Checks if the specified type T matches the kind of items stored in the Wrapper.
     /// Parameters:
@@ -198,10 +181,66 @@ module wrapper::wrapper {
     /// Returns:
     /// - True if the Wrapper contains no items, false otherwise.
     public fun is_empty(w: &Wrapper): bool {
-        w.count() == 0 && w.kind == std::ascii::string(b"")
+        w.kind == std::ascii::string(EMPTY_WRAPPER_KIND) || w.count() == 0
     }
 
-    // ===== Public functions =====
+    // ===== Basic property functions =====
+
+    /// Retrieves the kind of objects contained within the Wrapper.
+    /// Returns an ASCII string representing the type of the wrapped objects.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// Returns:
+    /// - ASCII string indicating the kind of objects in the Wrapper.
+    public fun kind(w: &Wrapper): std::ascii::String {
+        w.kind
+    }
+
+    /// Retrieves the alias of the Wrapper.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// Returns:
+    /// - UTF8 encoded string representing the alias of the Wrapper.
+    public fun alias(w: &Wrapper): std::string::String {
+        w.alias
+    }
+
+    /// Retrieves all object IDs contained within the Wrapper.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// Returns:
+    /// - A vector of some items or IDs representing all objects within the Wrapper.
+    public fun items(w: &Wrapper): vector<vector<u8>> {
+        w.items
+    }
+
+    /// Returns the number of objects contained within the Wrapper.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// Returns:
+    /// - The count of items in the Wrapper as a 64-bit unsigned integer.
+    public fun count(w: &Wrapper): u64 {
+        w.items.length()
+    }
+
+    /// Retrieves the ID of the object at a specified index within the Wrapper.
+    /// Parameters:
+    /// - `w`: Reference to the Wrapper.
+    /// - `i`: Index of the item to retrieve.
+    /// Returns:
+    /// - item or ID of the object at the specified index.
+    /// Errors:
+    /// - `EIndexOutOfBounds`: If the provided index is out of bounds.
+    public fun item(w: &Wrapper, i: u64): vector<u8> {
+        if (w.count() <= i) {
+            abort EIndexOutOfBounds
+        }else{
+            w.items[i]
+        }
+    }
+
+    // ===== Basic Public Entry functions =====
+
     /// Sets a new alias for the Wrapper.
     /// Parameters:
     /// - `w`: Mutable reference to the Wrapper.
@@ -212,156 +251,155 @@ module wrapper::wrapper {
         w.alias = alias;
     }
 
-    /// Sets a new image_url for the Wrapper
+    /// Sets a new image for the Wrapper
     /// Parameters:
     /// - `w`: Mutable reference to the Wrapper.
-    /// - `image_url`: New image_url to set for the Wrapper.
+    /// - `image`: New image to set for the Wrapper.
     /// Effects:
-    /// - Updates the image_url field of the Wrapper.
-    public entry fun set_image_url(w: &mut Wrapper, image_url: std::string::String) {
-        w.image_url = image_url;
+    /// - Updates the image field of the Wrapper.
+    public entry fun set_image(w: &mut Wrapper, image: std::string::String) {
+        w.image = image;
     }
 
 
-    /// Sets a new image url for the Wrapper.
-    /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// - `image_url`: New image url to set for the Wrapper.
-    /// Effects:
-    /// - Updates the image_url field of the Wrapper.
-    public entry fun set_image(w:&mut Wrapper, image_url: std::string::String){
-        w.image_url = image_url;
-    }
+    // =============== Ink Extension Functions ===============
 
-    /// Removes an object from the Wrapper at a specified index and returns it.
-    /// Checks that the operation is type-safe.
+    // ===== Ink Check functions =====
+
+    /// Checks if the Wrapper is inkscription.
     /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// - `i`: Index of the item to remove.
+    /// - `w`: Reference to the Wrapper.
     /// Returns:
-    /// - The object of type T removed from the Wrapper.
-    /// Effects:
-    /// - If the Wrapper is empty after removing the item, its kind is set to an empty string.
-    /// Errors:
-    /// - `EItemNotSameKind`: If the item type does not match the Wrapper's kind.
-    public fun remove<T:store + key>(w: &mut Wrapper, i: u64): T {
-        assert!(w.count() > i, EIndexOutOfBounds);
-        assert!(w.is_same_kind<T>(), EItemNotSameKind);
-        // remove the item from the Wrapper
-        let id = w.item(i);
-        let object:T = field::remove<Item,T>(&mut w.id, Item { id });
-        w.items.swap_remove(i);
+    /// - True if the Wrapper only contains items, false otherwise.
+    public fun is_inkscription(w: &Wrapper): bool {
+        w.kind == std::ascii::string(INKSCRIPTION_WRAPPER_KIND)
+    }
 
-        // if the Wrapper is empty, set the kind to empty
+    // ===== Ink Public Entry functions =====
+    
+    /// Appends an ink inscription to the Wrapper.
+    /// Ensures that the operation is type-safe and the Wrapper is either empty or already contains ink inscriptions.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `ink`: The string to be inscribed.
+    /// Errors:
+    /// - `EWrapperNotEmptyOrINKSciption`: If the Wrapper is neither empty nor an inscription.
+    public entry fun inkscribe(w: &mut Wrapper, mut ink:vector<std::string::String>) {
+        assert!(w.is_inkscription() || w.is_empty(), EWrapperNotEmptyOrINKSciption);
+        if (w.is_empty()) {
+            w.kind = std::ascii::string(INKSCRIPTION_WRAPPER_KIND)
+        };
+        while (ink.length() > 0){
+            vector::push_back(&mut w.items, *ink.pop_back().bytes());
+        };
+        ink.destroy_empty();
+    }
+
+    /// Removes an ink inscription from the Wrapper at a specified index.
+    /// Ensures that the operation is type-safe and the index is within bounds.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `index`: Index of the inscription to remove.
+    /// Errors:
+    /// - `EWrapperNotEmptyOrINKSciption`: If the Wrapper is not an inscription.
+    /// - `EIndexOutOfBounds`: If the index is out of bounds.
+    public entry fun erase(w: &mut Wrapper, index: u64) {
+        assert!(w.is_inkscription(), EWrapperNotEmptyOrINKSciption);
+        assert!(w.count() > index, EIndexOutOfBounds);
+        vector::remove(&mut w.items, index);
         if (w.count() == 0) {
-            w.kind = std::ascii::string(b"")
+            w.kind = std::ascii::string(EMPTY_WRAPPER_KIND)
         };
-        object
     }
 
-    /// Removes and returns a single object from the Wrapper by its ID.
-    /// Ensures the object exists and is of type T.
+    /// Shred all ink inscriptions in the Wrapper, effectively clearing it.
+    /// Ensures that the operation is type-safe and the Wrapper is either empty or already contains ink inscriptions.
     /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// - `id`: ID of the object to remove.
-    /// Returns:
-    /// - The object of type T.
+    /// - `w`: The Wrapper to be burned.
     /// Errors:
-    /// - `EItemNotFound`: If no item with the specified ID exists.
-    public fun take<T:store + key>(w: &mut Wrapper, id: ID): T {
-        assert!(w.has_item_with_type<T>(id), EItemNotFound);
-        // remove the item from the Wrapper
-        let (has_item,index) = w.items.index_of(&id);
-        if (has_item) {
-            w.remove(index)
-        }else{
-            abort EItemNotFound 
-        }
-    }
-
-    /// Removes and returns all objects from the Wrapper.
-    /// Ensures all objects are of type T.
-    /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// Returns:
-    /// - Vector of all objects of type T from the Wrapper.
-    public(package) fun take_all<T:store + key>(w: &mut Wrapper): vector<T> {
-        let mut objects = vector[];
-        while (w.count() > 0){
-            objects.push_back(w.remove<T>(0));
+    /// - `EWrapperNotEmptyOrINKSciption`: If the Wrapper is neither empty nor an ink inscription.
+    public entry fun shred(mut w: Wrapper) {
+        assert!(w.is_inkscription() || w.is_empty(), EWrapperNotEmptyOrINKSciption);
+        while (w.count() > 0) {
+            vector::pop_back(&mut w.items);
         };
-        objects
-    }
-
-    /// Adds a single object to the Wrapper. If the Wrapper is empty, sets the kind based on the object's type.
-    /// Parameters:
-    /// - `w`: Mutable reference to the Wrapper.
-    /// - `object`: The object to add to the Wrapper.
-    /// Effects:
-    /// - The object is added to the Wrapper, and its ID is stored.
-    /// Errors:
-    /// - `EItemNotSameKind`: If the Wrapper is not empty and the object's type does not match the Wrapper's kind.
-    public fun add<T:store + key>(w: &mut Wrapper, object:T) {
-        // check the object's kind
-        if (w.kind == std::ascii::string(b"")) {
-            w.kind = type_name::into_string(type_name::get<T>())
-        } else {
-            assert!(w.is_same_kind<T>(), EItemNotSameKind)
-        };
-        // add the object to the Wrapper
-        let oid = object::id(&object);
-        field::add(&mut w.id, Item{ id: oid }, object);
-        w.items.push_back(oid);
+        w.destroy_empty()
     }
     
-    /// Creates a new, empty Wrapper.
+
+    // =============== Object Extension Functions ===============
+
+    /// Represents a dynamic field key for an item in a Wrapper.
+    /// Each item in a Wrapper has a unique identifier of type ID.
+    public struct Item has store, copy, drop { id: ID }
+
+    // ===== Object Check functions =====
+    
+    /// Checks if an item with the specified ID exists within the Wrapper and is of type T.
     /// Parameters:
-    /// - `ctx`: Transaction context used for creating the Wrapper.
+    /// - `w`: Reference to the Wrapper.
+    /// - `id`: ID of the item to check.
     /// Returns:
-    /// - A new Wrapper with no items and a generic kind.
-    public fun new(ctx: &mut TxContext): Wrapper {
-        Wrapper {
-            id: object::new(ctx),
-            items: vector[],
-            kind: std::ascii::string(b""),
-            alias: std::string::utf8(b""),
-            image_url: std::string::utf8(b"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000' viewBox='0 0 120 120'%3E %3Cdefs%3E%3Cstyle%3E .st0 %7B fill: %23236D37; %7D .st1 %7B fill: %23C9CF79; %7D .st2 %7B fill: %237C9431; %7D .st3 %7B fill: %23FFFFFF; %7D %3C/style%3E%3Csymbol id='wrapper' viewBox='0 0 120 120'%3E%3Cpath class='st0' d='M83.49,110.3l-49.69-0.57c-2.14-0.02-4.09-1.21-5.1-3.09L5.2,62.84c-0.98-1.83-0.92-4.04,0.15-5.81L31.68,13.6 c1.08-1.77,3.01-2.85,5.08-2.82l49.69,0.57c2.14,0.02,4.09,1.21,5.1,3.09l23.49,43.8c0.98,1.83,0.92,4.04-0.15,5.81l-26.33,43.42 C87.49,109.25,85.56,110.32,83.49,110.3z' /%3E%3Cpath class='st1' d='M46.66,58.52c6.94,0.05,13.4-3.55,17-9.49L82.35,18.2c0.56-0.93-0.1-2.12-1.18-2.13l-37.22-0.46 c-4.79-0.06-9.25,2.42-11.73,6.51L11.59,56.13c-0.56,0.93,0.1,2.12,1.19,2.13L46.66,58.52z' /%3E%3Cpath class='st2' d='M28.64,94.19c2.99,6.11,8.98,10.01,15.77,10.26l34.86,0.62c1.06,0.04,1.82-1.12,1.36-2.08L64.46,71.21 c-2.04-4.23-6.17-6.93-10.85-7.1l-39.58-1.04c-1.06-0.04-1.82,1.13-1.35,2.08L28.64,94.19z' /%3E%3Cpath class='st3' d='M44.02,30.22c-10.62,6.14-16.61,17-16.17,28.16l7.35,0.06c-0.11-8.58,4.41-17.06,12.54-21.76 c4.8-2.77,10.12-3.8,15.18-3.28c1.52,0.16,2.97-0.66,3.57-2.06l0.08-0.18c0.93-2.14-0.44-4.58-2.76-4.89 C57.2,25.39,50.25,26.61,44.02,30.22z' /%3E%3Cpath class='st1' d='M44.47,76.93c0.33,2-1.27,3.68-3.26,3.43l-7.92-0.99l-3.83-0.38c-1.84-0.18-2.68-2.48-1.35-3.68l6.2-5.62 l4.92-5.03c0.91-0.93,2.54-0.41,2.85,0.91l1.73,7.37L44.47,76.93z' /%3E%3Cpath class='st1' d='M28.5,63.45c0.64,2.93,1.75,5.84,3.35,8.63l3.17-3.02L37,67.13c-0.48-1.14-0.85-2.31-1.14-3.49L28.5,63.45z' /%3E%3Cpath class='st1' d='M68.9,79.73c-4.05,1.7-8.33,2.27-12.45,1.82c-1.53-0.17-3,0.65-3.61,2.06l-0.1,0.23 c-0.91,2.1,0.43,4.5,2.7,4.82c5.59,0.78,11.43,0.08,16.88-2.3L68.9,79.73z' /%3E%3Cpath class='st2' d='M74.26,37.09c-0.35-1.99,1.24-3.69,3.24-3.45l8.04,0.65l4.24,0.38c1.84,0.17,2.7,2.46,1.38,3.67l-6.69,5.91 l-5.42,5.65c-0.9,0.94-2.54,0.43-2.86-0.89l-1.25-7.94L74.26,37.09z' /%3E%3Cpath class='st2' d='M84.73,43.84l-2.61,2.75c5.04,10.68,1.33,23.65-8.76,30.48l3.52,6.6c13.95-9.01,18.54-27.44,10.25-42.01 L84.73,43.84z' /%3E%3C/symbol%3E%3Cmask id='text'%3E%3Ctext fill='%23FFFFFF' font-size='12' text-anchor='middle'%3E%3Ctspan x='50%25' y='98%25' font-size='1'%3E{kind}%3C/tspan%3E%3C/text%3E%3C/mask%3E%3C/defs%3E%3Cuse href='%23wrapper' /%3E%3Crect width='120' height='120' fill='url(%23bg)' /%3E %3Crect width='120' height='120' fill='rgba(192,192,192,0.7)' /%3E%3Crect width='120' height='120' fill='rgba(255,0,0,1)' mask='url(%23text)' /%3E%3C/svg%3E"),
-        }
+    /// - True if the item exists and is of type T, false otherwise.
+    public fun has_item_with_type<T: key + store>(w: &Wrapper, id: ID): bool {
+        dof::exists_with_type<Item, T>(&w.id, Item { id }) && w.items.contains(&id.to_bytes()) && w.is_same_kind<T>()
     }
 
-    /// Destroys the Wrapper, ensuring it is empty before deletion.
+    // ===== Object property functions =====
+
+    #[syntax(index)]
+    /// Borrow an immutable reference to the item at a specified index within the Wrapper.
+    /// Ensures the item exists and is of type T before borrowing.
     /// Parameters:
-    /// - `w`: The Wrapper to destroy.
-    /// Effects:
-    /// - The Wrapper and its identifier are deleted.
+    /// - `w`: Reference to the Wrapper.
+    /// - `i`: Index of the object to borrow.
+    /// Returns:
+    /// - Immutable reference to the item of type T.
     /// Errors:
-    /// - `EWrapperNotEmpty`: If the Wrapper is not empty at the time of destruction.
-    public fun destroy_empty(w: Wrapper) {
-        // remove all items from the Wrapper
-        assert!(w.count() == 0, EWrapperNotEmpty);
-        // delete the Wrapper
-        let Wrapper { id, items:_, kind: _, alias:_, image_url:_ } = w;
-        id.delete();
+    /// - `EItemNotFoundOrNotSameKind`: If no item exists at the index or if the item is not of type T.
+    public fun borrow<T:store + key>(w: &Wrapper,i: u64): &T {
+        let id = object::id_from_bytes(w.item(i));
+        assert!(w.has_item_with_type<T>(id), EItemNotFoundOrNotSameKind);
+        dof::borrow(&w.id, Item { id })
     }
 
+    #[syntax(index)]
+    /// Borrow a mutable reference to the item at a specified index within the Wrapper.
+    /// Ensures the item exists and is of type T before borrowing.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `i`: Index of the object to borrow.
+    /// Returns:
+    /// - Mutable reference to the item of type T.
+    /// Errors:
+    /// - `EItemNotFoundOrNotSameKind`: If no item exists at the index or if the item is not of type T.
+    public fun borrow_mut<T:store + key>(w: &mut Wrapper, i: u64): &mut T {
+        let id = object::id_from_bytes(w.item(i));
+        assert!(w.has_item_with_type<T>(id), EItemNotFoundOrNotSameKind);
+        dof::borrow_mut(&mut w.id, Item { id })
+    }
+
+
+    // ===== Object Public Entry functions =====
+    
     /// Wraps object list into a new Wrapper.
     /// Parameters:
+    /// - `w`: The Wrapper to unwrap.
     /// - `object`: The object to wrap.
-    /// - `ctx`: Transaction context.
     /// Returns:
-    /// - A new Wrapper containing the object.
-    public fun wrap<T: store + key>(object:vector<T>, ctx: &mut TxContext):Wrapper{
-        // create a new Wrapper
-        let mut w = new(ctx);
-        let mut object = object;
+    /// - all objects of type T warp the Wrapper.
+    /// Errors:
+    /// - `EItemNotSameKind`: If any contained item is not of type T.
+    public entry fun wrap<T: store + key>(w:&mut Wrapper, mut objects:vector<T>){
+        assert!(w.is_same_kind<T>(), EItemNotSameKind);
         // add the object to the Wrapper
-        while (object.length() > 0){
-            w.add(object.pop_back());
+        while (objects.length() > 0){
+            w.add(objects.pop_back());
         };
-        object.destroy_empty();
-        w
+        objects.destroy_empty();
     }
 
+    /// TODO: USE THE INCEPTION WRAPPER TOKENIZED COIN TO UNWRAP
     /// Unwraps all objects from the Wrapper, ensuring all are of type T, then destroys the Wrapper.
     /// Parameters:
     /// - `w`: The Wrapper to unwrap.
@@ -379,6 +417,27 @@ module wrapper::wrapper {
         w.destroy_empty();
     }
 
+    /// Adds a single object to the Wrapper. If the Wrapper is empty, sets the kind based on the object's type.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `object`: The object to add to the Wrapper.
+    /// Effects:
+    /// - The object is added to the Wrapper, and its ID is stored.
+    /// Errors:
+    /// - `EItemNotSameKind`: If the Wrapper is not empty and the object's type does not match the Wrapper's kind.
+    public entry fun add<T:store + key>(w: &mut Wrapper, object:T) {
+        // check the object's kind
+        if (w.kind == std::ascii::string(EMPTY_WRAPPER_KIND)) {
+            w.kind = type_name::into_string(type_name::get<T>())
+        } else {
+            assert!(w.is_same_kind<T>(), EItemNotSameKind)
+        };
+        // add the object to the Wrapper
+        let oid = object::id(&object);
+        dof::add(&mut w.id, Item{ id: oid }, object);
+        w.items.push_back(oid.to_bytes());
+    }
+
     /// Transfers all objects from one Wrapper (`self`) to another (`w`).
     /// Both Wrappers must contain items of the same type T.
     /// Parameters:
@@ -389,14 +448,61 @@ module wrapper::wrapper {
     /// - The source Wrapper is left empty after the operation.
     /// Errors:
     /// - `EItemNotSameKind`: If the Wrappers do not contain the same type of items.
-    public fun shift<T: store + key>(self:&mut Wrapper, w: &mut Wrapper) {
+    public entry fun shift<T: store + key>(self:&mut Wrapper, w: &mut Wrapper) {
         assert!(self.is_same_kind<T>(), EItemNotSameKind);
-        let mut objects = self.take_all<T>();
-        while (objects.length() > 0) {
-            w.add(objects.pop_back());
+        while (self.count() > 0){
+            w.add(self.remove<T>(0));
         };
-        objects.destroy_empty();
     }
+
+    // ===== Object Internal functions =====
+    
+    /// Removes an object from the Wrapper at a specified index and returns it.
+    /// Checks that the operation is type-safe.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `i`: Index of the item to remove.
+    /// Returns:
+    /// - The object of type T removed from the Wrapper.
+    /// Effects:
+    /// - If the Wrapper is empty after removing the item, its kind is set to an empty string.
+    /// Errors:
+    /// - `EItemNotSameKind`: If the item type does not match the Wrapper's kind.
+    public(package) fun remove<T:store + key>(w: &mut Wrapper, i: u64): T {
+        assert!(w.count() > i, EIndexOutOfBounds);
+        assert!(w.is_same_kind<T>(), EItemNotSameKind);
+        // remove the item from the Wrapper
+        let id = object::id_from_bytes(w.item(i));
+        let object:T = dof::remove<Item,T>(&mut w.id, Item { id });
+        w.items.swap_remove(i);
+        // if the Wrapper is empty, set the kind to empty
+        if (w.count() == 0) {
+            w.kind = std::ascii::string(EMPTY_WRAPPER_KIND)
+        };
+        object
+    }
+
+    /// Removes and returns a single object from the Wrapper by its ID.
+    /// Ensures the object exists and is of type T.
+    /// Parameters:
+    /// - `w`: Mutable reference to the Wrapper.
+    /// - `id`: ID of the object to remove.
+    /// Returns:
+    /// - The object of type T.
+    /// Errors:
+    /// - `EItemNotFound`: If no item with the specified ID exists.
+    public(package) fun take<T:store + key>(w: &mut Wrapper, id: ID): T {
+        assert!(w.has_item_with_type<T>(id), EItemNotFound);
+        // remove the item from the Wrapper
+        let (has_item,index) = w.items.index_of(&id.to_bytes());
+        if (has_item) {
+            w.remove(index)
+        }else{
+            abort EItemNotFound 
+        }
+    }
+
+    // ===== Object Public functions =====
 
     /// Merges two Wrappers into one. If both Wrappers are of the same kind, merges the smaller into the larger.
     /// If they are of different kinds or if one is empty, handles accordingly.
@@ -412,7 +518,7 @@ module wrapper::wrapper {
     /// - A single merged Wrapper.
     /// Errors:
     /// - `EItemNotSameKind`: If the Wrappers contain different kinds of items and cannot be merged.
-    public fun merge<T:store + key>(w1: Wrapper, w2: Wrapper, ctx: &mut TxContext): Wrapper{
+    public fun merge<T:store + key>(mut w1: Wrapper, mut w2: Wrapper, ctx: &mut TxContext): Wrapper{
         let kind = type_name::into_string(type_name::get<T>());
         // if one of the Wrappers is empty, return the other Wrapper
         if (w1.is_empty()) {
@@ -424,17 +530,13 @@ module wrapper::wrapper {
         } else if (w1.kind == w2.kind && w2.kind == kind) {
             // check the count of the two Wrappers
             if (w1.count() > w2.count()) {
-                let mut w = w1;
-                let mut self = w2;
-                self.shift<T>(&mut w);
-                self.destroy_empty();
-                w
+                w2.shift<T>(&mut w1);
+                w2.destroy_empty();
+                w1
             } else {
-                let mut w = w2;
-                let mut self = w1;
-                self.shift<T>(&mut w);
-                self.destroy_empty();
-                w
+                w1.shift<T>(&mut w2);
+                w1.destroy_empty();
+                w2
             }
         } else {
             // create a new Wrapper
@@ -443,56 +545,6 @@ module wrapper::wrapper {
             w.add(w2);
             w
         }
-    }
-
-    /// Splits objects from the Wrapper based on the specified count, moving them into a new Wrapper.
-    /// If the count is less than or equal to the current count, all objects are moved.
-    /// Parameters:
-    /// - `w`: Mutable reference to the original Wrapper.
-    /// - `count`: Number of items to split into the new Wrapper.
-    /// - `ctx`: Transaction context.
-    /// Returns:
-    /// - A new Wrapper containing the split
-    public fun split<T:store + key>(w: &mut Wrapper, count: u64, ctx: &mut TxContext): Wrapper{
-        // create a new Wrapper
-        let mut w2 = new(ctx);
-        if (w.count() <= count) {
-            w.shift<T>(&mut w2);
-        }else{
-            // take the objects from the first Wrapper and add them to the second Wrapper
-            while (w2.count() < count){
-                w2.add(w.remove<T>(0));
-            };
-        };
-        w2
-    }
-
-
-    /// Splits objects from the Wrapper based on the specified list of indices, moving them into a new Wrapper.
-    /// Converts the index list to an ID list before splitting.
-    /// Parameters:
-    /// - `w`: Mutable reference to the original Wrapper.
-    /// - `indexs`: Vector of indices indicating which items to split.
-    /// - `ctx`: Transaction context.
-    /// Returns:
-    /// - A new Wrapper containing the split items.
-    /// Errors:
-    /// - `EIndexOutOfBounds`: If any specified index is out of bounds.
-    public fun split_with_index<T:store + key>(w: &mut Wrapper, indexs: vector<u64>, ctx: &mut TxContext): Wrapper{
-        // create a new Wrapper
-        let mut w2 = new(ctx);
-        // trans index list to id list
-        let mut ids = vector[];
-        let mut indexs = indexs;
-        while (ids.length() < indexs.length()){
-            assert!(indexs[indexs.length()-1] < w.count(), EIndexOutOfBounds);
-            ids.push_back(w.item(indexs.pop_back()));
-        };
-        // take the objects from the first Wrapper and add them to the second Wrapper
-        while (ids.length() > 0){
-            w2.add(w.take<T>(ids.pop_back()));
-        };
-        w2
     }
 
     /// Splits objects from the Wrapper based on the specified list of IDs, moving them into a new Wrapper.
@@ -504,69 +556,224 @@ module wrapper::wrapper {
     /// - A new Wrapper containing the split items.
     /// Errors:
     /// - `EItemNotFoundOrNotSameKind`: If any specified ID does not exist or the item is not of the expected type.
-    public fun split_with_id<T:store + key>(w: &mut Wrapper, ids: vector<ID>, ctx: &mut TxContext): Wrapper{
+    public fun split<T:store + key>(w: &mut Wrapper,mut ids: vector<ID>, ctx: &mut TxContext): Wrapper{
         // create a new Wrapper
         let mut w2 = new(ctx);
         // take the objects from the first Wrapper and add them to the second Wrapper
-        let mut ids = ids;
         while (ids.length() > 0){
             assert!(w.has_item_with_type<T>(ids[ids.length()-1]), EItemNotFoundOrNotSameKind);
             w2.add(w.take<T>(ids.pop_back()));
         };
+        ids.destroy_empty();
         w2
     }
 
-    // public fun split_with_amount<T>(w: &mut Wrapper, amount: u64, ctx: &mut TxContext):Wrapper{
-    //     // create a new Wrapper
-    //     let mut w2 = new(ctx);
-    //     // take the objects from the first Wrapper and add them to the second Wrapper
-    //     let x:&mut Coin<T> = &mut w[0];
-    //     w2.add(x.split(amount, ctx));
-    //     w2
-    // }
+    // =============== Tokenized Extension Functions ===============
+
+    public struct Lock has store, copy, drop {     
+        id: ID,
+        total_supply: u64,
+        owner: Option<address>,
+    }
+
+    // tokenized module name prefix
+    const WRAPPER_TOKENIZED_PREFIX: vector<u8> = b"T_";
+
+    // === Error Codes ===
+    const ENOT_TOKENIZED_WRAPPER: u64 = 0;
+    const EWRAPPER_TOKENIZED_NOT_TREASURY: u64 = 1;
+    const EWRAPPER_TOKENIZED_NOT_LOCK: u64 = 2;
+    const EWRAPPER_TOKENIZED_MISMATCH: u64 = 3;
+    const EWRAPPER_TOKENIZED_NOT_TOKENIZED: u64 = 4;
+    const EWRAPPER_TOKENIZED_NOT_ACCESS: u64 = 5;
+    const EWRAPPER_TOKENIZED_HAS_OWNER: u64 = 6;
+    const ETOKEN_SUPPLY_MISMATCH: u64 = 7;
+    const ECANNOT_UNLOCK_NON_ZERO_SUPPLY: u64 = 8;
+    const EWRAPPER_TOKENIZED_HAS_TOKENIZED: u64 = 9;
+
+
+    // === Tokenized Public Check Functions ===
+    public fun is_tokenized(w: &Wrapper) {
+        assert!(w.kind == std::ascii::string(TOKENIZED_WRAPPER_KIND), ENOT_TOKENIZED_WRAPPER);
+    }
+
+    fun have_treasury<T: drop>(wt: &Wrapper, id: ID) {
+        is_tokenized(wt);
+        assert!(dof::exists_with_type<Item, TreasuryCap<T>>(&wt.id, Item { id }) && wt.items.contains(&id.to_bytes()), EWRAPPER_TOKENIZED_NOT_TREASURY);
+    }
+
+    fun have_lock(wt: &Wrapper) {
+        is_tokenized(wt);
+        assert!(df::exists_with_type<Item, Lock>(&wt.id, Item { id:object::id(wt) }), EWRAPPER_TOKENIZED_NOT_LOCK);
+    }
+
+    fun check_tokenized_object<T: drop>(object: address) {
+        let mut p = WRAPPER_TOKENIZED_PREFIX;
+        vector::append<u8>(&mut p,object.to_ascii_string().into_bytes());
+        assert!(type_name::get_module(&type_name::get<T>()).into_bytes() == p, EWRAPPER_TOKENIZED_MISMATCH);
+    }
     
-    // public fun split<T>(
-    //     self: &mut Coin<T>, split_amount: u64, ctx: &mut TxContext
-    // ): Coin<T> {
-    //     take(&mut self.balance, split_amount, ctx)
-    // }
+    fun has_wrapper(wt: &Wrapper, id: ID) {
+        is_tokenized(wt);
+        assert!(dof::exists_with_type<Item, Wrapper>(&wt.id, Item { id }) && vector::contains<vector<u8>>(&wt.items,&id.to_bytes()) , EWRAPPER_TOKENIZED_NOT_TOKENIZED);
+    }
 
-    // public entry fun join_vec<T>(self: &mut Coin<T>, mut coins: vector<Coin<T>>) {
-    //     let (mut i, len) = (0, coins.length());
-    //     while (i < len) {
-    //         let coin = coins.pop_back();
-    //         self.join(coin);
-    //         i = i + 1
-    //     };
-    //     // safe because we've drained the vector
-    //     coins.destroy_empty()
-    // }
+    fun not_wrapper(wt: &Wrapper, id: ID) {
+        is_tokenized(wt);
+        assert!(!dof::exists_with_type<Item, Wrapper>(&wt.id, Item { id }) && vector::contains<vector<u8>>(&wt.items,&id.to_bytes()) , EWRAPPER_TOKENIZED_HAS_TOKENIZED);
+    }
 
 
-    // public fun merge_items(w: &mut Wrapper, ctx: &mut TxContext) {
-    //     // 判断Wrapper中对象的类型
-    //     if (w.kind == std::ascii::string(b"coin")) {
-    //         let new_id = wrapper::coin_strategy::coin_merge(vector::copy(&w.items), ctx);
-    //         w.items = vector::singleton(new_id);
-    //     }
-    //     // 可以在此添加更多类型的合并策略
-    // }
+    fun has_access(wt: &Wrapper, ctx: &TxContext) {
+        is_tokenized(wt);
+        let lock = df::borrow<Item,Lock>(&wt.id, Item { id: object::id(wt) });
+        assert!(lock.owner.is_some() && ctx.sender() == lock.owner.borrow(),EWRAPPER_TOKENIZED_NOT_ACCESS)
+    }
 
-    // // 通用拆分函数
-    // public fun split_item_by_amount(w: &mut Wrapper, amount: u64, ctx: &mut TxContext) {
-    //     // 判断Wrapper中对象的类型
-    //     if (w.kind == std::ascii::string(b"coin")) {
-    //         let len = vector::length(&w.items);
-    //         for i in 0..len {
-    //             let id = *vector::borrow(&w.items, i);
-    //             let (new_id, remaining_id) = wrapper::coin_strategy::coin_split(id, amount, ctx);
+    fun not_owner(wt: &Wrapper) {
+        is_tokenized(wt);
+        let lock = df::borrow<Item,Lock>(&wt.id, Item { id: object::id(wt) });
+        assert!(lock.owner.is_none(), EWRAPPER_TOKENIZED_HAS_OWNER);
+    }
 
-    //             vector::push_back(&mut w.items, new_id);
-    //             *vector::borrow_mut(&mut w.items, i) = remaining_id;
-    //             return;
-    //         }
-    //     }
-    //     // 可以在此添加更多类型的拆分策略
-    //     abort EInvalidAmount;
-    // }
+    // ===== Tokenized Public Entry functions =====
+
+    public entry fun register<T: drop>(
+        witness: T,
+        decimals: u8,
+        symbol: vector<u8>,
+        name: vector<u8>,
+        description: vector<u8>,
+        icon_url: vector<u8>,
+        object: address,
+        ctx: &mut TxContext
+    ) {
+        // check tokenized object is equal to witness type name
+        check_tokenized_object<T>(object);
+        let icon_url = if (icon_url == b"") {
+            option::none()
+        } else {
+            option::some(url::new_unsafe_from_bytes(icon_url))
+        };
+        // create a new currency
+        let (treasury, metadata) = coin::create_currency(witness,decimals,symbol,name,description,icon_url,ctx);
+        transfer::public_freeze_object(metadata);
+
+        // share the tokenized object wrapper with the treasury
+        tokenized<T>(treasury,object,ctx);
+    }
+
+    public entry fun tokenized<T: drop>(treasury:TreasuryCap<T>,object:address,ctx: &mut TxContext) {
+        check_tokenized_object<T>(object);
+        let mut wt = new(ctx);
+        wt.kind = std::ascii::string(TOKENIZED_WRAPPER_KIND);
+        wt.alias = std::string::from_ascii(type_name::get_module(&type_name::get<T>()));
+        // core internal
+        let oid = object::id_from_address(object);
+        let tid = object::id(&treasury);
+        let wtid = object::id(&wt);
+        df::add(&mut wt.id,
+            Item{ id: wtid },
+            Lock { 
+                id: oid,
+                owner: option::none(),
+                total_supply: 0,
+            }
+        );
+        // add items ,but not dof add item,means not add to the object store
+        wt.items.push_back(oid.to_bytes());
+        // dof::add(&mut wt.id, Item{ id: oid }, wrapper_tokenized);
+        // add treasury,means the treasury is in the object store
+        wt.items.push_back(tid.to_bytes());
+        dof::add(&mut wt.id, Item{ id: tid }, treasury);
+
+        transfer::public_share_object(wt);
+    }
+
+    public entry fun lock<T: drop>(wt: &mut Wrapper,total_supply:u64, w: Wrapper, ctx: &mut TxContext) {
+        // check if wrapper is not locked,must be none
+        has_wrapper(wt,object::id(&w));
+        // check if wrapper id is equal to tokenized_object
+        not_owner(wt);
+
+        // fill the wrapper and owner
+        dof::add(&mut wt.id, Item{ id: object::id(&w) }, w);
+        have_lock(wt);
+        let wtid = object::id(wt);
+        let mut lock = df::borrow_mut<Item,Lock>(&mut wt.id, Item { id: wtid });
+        option::fill(&mut lock.owner, ctx.sender());
+        // mint total supply of tokenized wrapper
+        lock.total_supply = total_supply;
+    }
+
+    public entry fun unlock<T: drop>(wt: &mut Wrapper, ctx: &mut TxContext) {
+        // check has access
+        has_access(wt,ctx);
+        // burn total supply of tokenized wrapper to unlock wrapper
+        let total_supply = total_supply(wt);
+        let treasury_supply = supply<T>(wt);
+        assert!(total_supply == treasury_supply, ETOKEN_SUPPLY_MISMATCH);
+        assert!(total_supply == 0, ECANNOT_UNLOCK_NON_ZERO_SUPPLY);
+
+        // transfer ownership to sender
+        let object_id = object::id_from_bytes(wt.item(0));
+        has_wrapper(wt,object_id);
+        let object: Wrapper = dof::remove<Item,Wrapper>(&mut wt.id, Item { id:object_id });
+        transfer::public_transfer(object, tx_context::sender(ctx));
+
+        // clear owner
+        have_lock(wt);
+        let wtid = object::id(wt);
+        let mut lock = df::borrow_mut<Item,Lock>(&mut wt.id, Item { id: wtid });
+        option::extract(&mut lock.owner);
+    }
+
+    public entry fun mint<T:drop>(wt: &mut Wrapper, value: u64, ctx: &mut TxContext) {
+        // check has access
+        has_access(wt,ctx);
+        // check if total supply is less than max supply
+        let total_supply = total_supply(wt);
+        let treasury_supply = supply<T>(wt);
+        assert!(value + treasury_supply < total_supply, ETOKEN_SUPPLY_MISMATCH);
+
+        // mint token
+        let treasury_id = object::id_from_bytes(wt.item(1));
+        have_treasury<T>(wt,treasury_id);
+        let mut treasury = dof::borrow_mut<Item,TreasuryCap<T>>(&mut wt.id, Item { id: treasury_id });
+        let token = coin::mint(treasury, value, ctx);
+
+        // transfer token to owner
+        transfer::public_transfer(token, tx_context::sender(ctx));
+    }
+
+    public entry fun burn<T:drop>(wt: &mut Wrapper, c: Coin<T>) {
+        is_tokenized(wt);
+
+        // burn token
+        let treasury_id = object::id_from_bytes(wt.item(1));
+        have_treasury<T>(wt,treasury_id);
+        let burn_value = c.value();
+        let mut treasury = dof::borrow_mut<Item,TreasuryCap<T>>(&mut wt.id, Item { id: treasury_id });
+        coin::burn(treasury, c);
+        
+        // update total supply
+        have_lock(wt);
+        let wtid = object::id(wt);
+        let mut lock = df::borrow_mut<Item,Lock>(&mut wt.id, Item { id: wtid });
+        lock.total_supply = lock.total_supply - burn_value;
+    }
+
+    public fun total_supply(wt: &Wrapper): u64 {
+        have_lock(wt);
+        let lock = df::borrow<Item,Lock>(&wt.id, Item { id: object::id(wt) });
+        lock.total_supply
+    }
+
+    public fun supply<T:drop>(wt: &Wrapper): u64 {
+        is_tokenized(wt);
+        let treasury_id = object::id_from_bytes(wt.item(1));
+        have_treasury<T>(wt,treasury_id);
+        let treasury = dof::borrow<Item,TreasuryCap<T>>(&wt.id, Item { id: treasury_id });
+        treasury.total_supply()
+    }
 }
